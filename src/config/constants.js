@@ -1,2 +1,2 @@
-export const COLLECTION_1 = "participantes"
-export const COLLECTION_2 = "mensagens"
+export const COLLECTION_1 = "participants"
+export const COLLECTION_2 = "messages"

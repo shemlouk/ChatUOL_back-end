@@ -33,4 +33,20 @@ router.post("/", async (req, res) => {
   );
 });
 
+router.get("/", async (req, res) => {
+  const query = Number(req.query.limit);
+  const user = req.get("user");
+  if (!user) return res.sendStatus(422);
+  try {
+    const messages = await db.collection(COLLECTION_2).find().toArray();
+    const limit = query > 0 ? query : messages.length;
+    const filteredMessages = messages.filter(
+      (m) => m.from === user || m.to === user || m.to === "Todos"
+    );
+    res.status(200).send(filteredMessages.reverse().slice(0, limit));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 export default router;

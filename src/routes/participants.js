@@ -29,4 +29,13 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  try {
+    const participants = await db.collection(COL).find().toArray();
+    res.status(200).send(participants);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 export default router;

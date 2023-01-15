@@ -1,29 +1,36 @@
+import { COLLECTION_1, COLLECTION_2 } from "../config/constants.js";
 import consoleMessage from "../utils/consoleMessage.js";
 import db from "../config/database.js";
 import express from "express";
+import dayjs from "dayjs";
 import joi from "joi";
 
 const schema = joi.object({
   name: joi.string().required(),
 });
 
-const COL = "participantes";
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const body = req.body;
-  const validation = schema.validate(body, { abortEarly: true });
+  const data = req.body;
+  const validation = schema.validate(data, { abortEarly: true });
   if (validation.error) return res.sendStatus(422);
-
   try {
-    const nameAlreadyExists = await db.collection(COL).findOne(body);
+    const nameAlreadyExists = await db.collection(COLLECTION_1).findOne(data);
     if (nameAlreadyExists) return res.sendStatus(409);
-
-    body.lastStatus = Date.now();
-    await db.collection(COL).insertOne(body);
-
-    res.status(200).send(body);
-    consoleMessage("yellow", body.name, "added to database as", "participant");
+    data.lastStatus = Date.now();
+    const message = {
+      from: data.name,
+      to: "Todos",
+      text: "entra na sala...",
+      type: "status",
+      time: dayjs().format("HH:mm:ss"),
+    };
+    await db.collection(COLLECTION_1).insertOne(data);
+    await db.collection(COLLECTION_2).insertOne(message);
+    res.status(201).send({ data, message });
+    consoleMessage("yellow", data.name, "added to database as", "participant");
+    console.log("Entry message sent to database");
   } catch (error) {
     console.log(error);
   }
@@ -31,7 +38,7 @@ router.post("/", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const participants = await db.collection(COL).find().toArray();
+    const participants = await db.collection(COLLECTION_1).find().toArray();
     res.status(200).send(participants);
   } catch (error) {
     console.log(error);

@@ -2,6 +2,7 @@ import { PORT } from "./config/variables.js";
 import express from "express";
 import chalk from "chalk";
 import cors from "cors";
+import removeIdleUsers from "./utils/removeIdleUsers.js";
 import participants from "./routes/participants.js";
 import messages from "./routes/messages.js";
 import status from "./routes/status.js";
@@ -17,3 +18,5 @@ app.use("/status", status);
 app.listen(PORT, () => {
   console.log(chalk.blue(`Server is running`));
 });
+
+setInterval(removeIdleUsers, 15000)

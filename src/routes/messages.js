@@ -34,12 +34,12 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const query = Number(req.query.limit);
+  const qLimit = req.query.limit;
   const user = req.get("user");
-  if (!user) return res.sendStatus(422);
+  if (!user || (!(Number(qLimit) > 0) && qLimit)) return res.sendStatus(422);
   try {
     const messages = await db.collection(COLLECTION_2).find().toArray();
-    const limit = query > 0 ? query : messages.length;
+    const limit = Number(qLimit) > 0 ? Number(qLimit) : messages.length;
     const filteredMessages = messages.filter(
       (m) => m.from === user || m.to === user || m.to === "Todos"
     );

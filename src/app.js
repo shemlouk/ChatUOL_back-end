@@ -19,4 +19,4 @@ app.listen(PORT, () => {
   console.log(chalk.blue(`Server is running`));
 });
 
-setInterval(removeIdleUsers, 15000)
+// setInterval(removeIdleUsers, 15000)

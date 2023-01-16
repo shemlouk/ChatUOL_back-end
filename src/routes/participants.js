@@ -1,8 +1,8 @@
 import { COLLECTION_1, COLLECTION_2 } from "../config/constants.js";
+import createStatusMessage from "../utils/createStatusMessage.js";
 import consoleMessage from "../utils/consoleMessage.js";
 import db from "../config/database.js";
 import express from "express";
-import dayjs from "dayjs";
 import joi from "joi";
 
 const schema = joi.object({
@@ -19,15 +19,9 @@ router.post("/", async (req, res) => {
     const nameAlreadyExists = await db.collection(COLLECTION_1).findOne(data);
     if (nameAlreadyExists) return res.sendStatus(409);
     data.lastStatus = Date.now();
-    const message = {
-      from: data.name,
-      to: "Todos",
-      text: "entra na sala...",
-      type: "status",
-      time: dayjs().format("HH:mm:ss"),
-    };
-    await db.collection(COLLECTION_1).insertOne(data);
-    await db.collection(COLLECTION_2).insertOne(message);
+    const message = createStatusMessage(data.name, "entry");
+    db.collection(COLLECTION_1).insertOne(data);
+    db.collection(COLLECTION_2).insertOne(message);
     res.status(201).send({ data, message });
     consoleMessage("yellow", data.name, "added to database as", "participant");
     console.log("Entry message sent to database");

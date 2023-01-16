@@ -1,14 +1,13 @@
-import { COLLECTION_1, COLLECTION_2 } from "../config/constants.js";
+import { DB_PARTICIPANTS, DB_MESSAGES } from "../config/database.js";
 import consoleMessage from "../utils/consoleMessage.js";
-import db from "../config/database.js";
 import express from "express";
 import dayjs from "dayjs";
-import joi from "joi";
+import Joi from "joi";
 
-const scheme = joi.object({
-  to: joi.string().required(),
-  text: joi.string().required(),
-  type: joi.string().valid("message", "private_message").required(),
+const scheme = Joi.object({
+  to: Joi.string().required(),
+  text: Joi.string().required(),
+  type: Joi.string().valid("message", "private_message").required(),
 });
 
 const router = express.Router();
@@ -16,21 +15,18 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   const data = req.body;
   const user = req.get("user");
-  const validation = scheme.validate(data, { abortEarly: true });
-  const userIsLogged = await db
-    .collection(COLLECTION_1)
-    .findOne({ name: user });
-  if (validation.error || !userIsLogged) return res.sendStatus(422);
-  data.from = user;
-  data.time = dayjs().format("HH:mm:ss");
-  await db.collection(COLLECTION_2).insertOne(data);
-  res.status(201).send(data);
-  consoleMessage(
-    "magenta",
-    data.type,
-    `added to database`,
-    `from: ${data.from}`
-  );
+  try {
+    const userIsActive = await DB_PARTICIPANTS.findOne({ name: user });
+    const dataIsInvalid = scheme.validate(data, { abortEarly: true }).error;
+    if (dataIsInvalid || !userIsActive) return res.sendStatus(422);
+    data.from = user;
+    data.time = dayjs().format("HH:mm:ss");
+    DB_MESSAGES.insertOne(data);
+    res.status(201);
+    consoleMessage("magenta", data.type, `added to database`, "");
+  } catch (err) {
+    throw err;
+  }
 });
 
 router.get("/", async (req, res) => {
@@ -38,14 +34,12 @@ router.get("/", async (req, res) => {
   const user = req.get("user");
   if (!user || (!(Number(qLimit) > 0) && qLimit)) return res.sendStatus(422);
   try {
-    const messages = await db.collection(COLLECTION_2).find().toArray();
-    const limit = Number(qLimit) > 0 ? Number(qLimit) : messages.length;
-    const filteredMessages = messages.filter(
-      (m) => m.from === user || m.to === user || m.to === "Todos"
-    );
-    res.status(200).send(filteredMessages.reverse().slice(0, limit));
-  } catch (error) {
-    console.log(error);
+    const query = { $or: [{ from: user }, { to: user }, { to: "Todos" }] };
+    const messages = await DB_MESSAGES.find(query).sort({ _id: -1 }).toArray();
+    const limit = qLimit ? Number(qLimit) : messages.length;
+    res.status(200).send(messages.slice(0, limit));
+  } catch (err) {
+    throw err;
   }
 });
 

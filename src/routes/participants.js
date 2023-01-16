@@ -1,41 +1,37 @@
-import { COLLECTION_1, COLLECTION_2 } from "../config/constants.js";
+import { DB_PARTICIPANTS, DB_MESSAGES } from "../config/database.js";
 import createStatusMessage from "../utils/createStatusMessage.js";
 import consoleMessage from "../utils/consoleMessage.js";
-import db from "../config/database.js";
 import express from "express";
-import joi from "joi";
+import Joi from "joi";
 
-const schema = joi.object({
-  name: joi.string().required(),
+const schema = Joi.object({
+  name: Joi.string().required(),
 });
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
   const data = req.body;
-  const validation = schema.validate(data, { abortEarly: true });
-  if (validation.error) return res.sendStatus(422);
+  if (schema.validate(data).error) return res.sendStatus(422);
   try {
-    const nameAlreadyExists = await db.collection(COLLECTION_1).findOne(data);
+    const nameAlreadyExists = await DB_PARTICIPANTS.findOne(data);
     if (nameAlreadyExists) return res.sendStatus(409);
     data.lastStatus = Date.now();
-    const message = createStatusMessage(data.name, "entry");
-    db.collection(COLLECTION_1).insertOne(data);
-    db.collection(COLLECTION_2).insertOne(message);
-    res.status(201).send({ data, message });
+    DB_PARTICIPANTS.insertOne(data);
+    DB_MESSAGES.insertOne(createStatusMessage(data.name, "entry"));
+    res.sendStatus(201);
     consoleMessage("yellow", data.name, "added to database as", "participant");
-    console.log("Entry message sent to database");
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    throw err;
   }
 });
 
 router.get("/", async (req, res) => {
   try {
-    const participants = await db.collection(COLLECTION_1).find().toArray();
-    res.status(200).send(participants);
-  } catch (error) {
-    console.log(error);
+    const users = await DB_PARTICIPANTS.find().toArray();
+    res.status(200).send(users);
+  } catch (err) {
+    throw err;
   }
 });
 

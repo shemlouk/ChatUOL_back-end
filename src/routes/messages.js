@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
     data.from = user;
     data.time = dayjs().format("HH:mm:ss");
     DB_MESSAGES.insertOne(data);
-    res.status(201);
+    res.sendStatus(201);
     consoleMessage("magenta", data.type, `added to database`, "");
   } catch (err) {
     throw err;

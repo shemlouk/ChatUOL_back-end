@@ -8,7 +8,7 @@ import joi from "joi";
 const scheme = joi.object({
   to: joi.string().required(),
   text: joi.string().required(),
-  type: joi.string().valid("message", "private_message"),
+  type: joi.string().valid("message", "private_message").required(),
 });
 
 const router = express.Router();
